@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: circus-maximus
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: F1_CACHE_DIR
+        value: /tmp/f1_cache
+      - key: API_CACHE_DIR
+        value: /tmp/api_cache
