@@ -1,4 +1,10 @@
-fastf1>=3.8.0
-flask>=3.0.0
-pandas
-numpy
+fastapi>=0.110.0
+uvicorn>=0.29.0
+starlette>=0.37.0
+python-multipart>=0.0.9
+itsdangerous>=2.1.2
+werkzeug>=3.0.0
+psycopg2-binary>=2.9.9
+pandas>=2.0.0
+numpy>=1.26.0
+fastf1>=3.4.0

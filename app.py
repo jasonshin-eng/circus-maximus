@@ -33,10 +33,12 @@ import fastf1
 
 # ─── App Setup ────────────────────────────────────────────────────────────────
 
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key="f1-circus-drachma-2026", session_cookie="f1_session")
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+app.add_middleware(SessionMiddleware, secret_key=os.environ.get("SESSION_SECRET", "f1-circus-drachma-2026"), session_cookie="f1_session")
+app.mount("/static", StaticFiles(directory=os.path.join(_BASE_DIR, "static")), name="static")
+templates = Jinja2Templates(directory=os.path.join(_BASE_DIR, "templates"))
 
 @app.on_event("startup")
 async def _prewarm_cache():
@@ -53,7 +55,7 @@ async def _prewarm_cache():
 
 _executor = ThreadPoolExecutor(max_workers=6)
 
-CACHE_DIR = "./f1_cache"
+CACHE_DIR = os.environ.get("F1_CACHE_DIR", "/tmp/f1_cache")
 os.makedirs(CACHE_DIR, exist_ok=True)
 fastf1.Cache.enable_cache(CACHE_DIR)
 
@@ -63,7 +65,7 @@ YEAR = 2026
 # Layer 1: in-process dict (instant reads)
 # Layer 2: pickle files on disk (survives restarts; FastF1 re-processing skipped)
 
-PERSIST_CACHE_DIR = "./api_cache"
+PERSIST_CACHE_DIR = os.environ.get("API_CACHE_DIR", "/tmp/api_cache")
 os.makedirs(PERSIST_CACHE_DIR, exist_ok=True)
 
 _mem: dict = {}   # hot layer
@@ -106,9 +108,9 @@ async def run_sync(fn, *args):
 
 # ─── Database ─────────────────────────────────────────────────────────────────
 
-DATABASE_URL = (
-    "postgresql://postgres:Letbebefinaleofseem070612"
-    "@db.omwrevvtrredsftpoerq.supabase.co:5432/postgres"
+DATABASE_URL = os.environ.get(
+    "DATABASE_URL",
+    "postgresql://postgres:Letbebefinaleofseem070612@db.omwrevvtrredsftpoerq.supabase.co:5432/postgres"
 )
 
 def get_db():
