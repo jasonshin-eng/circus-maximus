@@ -36,7 +36,14 @@ import fastf1
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key=os.environ.get("SESSION_SECRET", "f1-circus-drachma-2026"), session_cookie="f1_session")
+_is_prod = os.environ.get("RENDER") or os.environ.get("FLY_APP_NAME")
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.environ.get("SESSION_SECRET", "f1-circus-drachma-2026"),
+    session_cookie="f1_session",
+    https_only=bool(_is_prod),
+    same_site="lax",
+)
 app.mount("/static", StaticFiles(directory=os.path.join(_BASE_DIR, "static")), name="static")
 templates = Jinja2Templates(directory=os.path.join(_BASE_DIR, "templates"))
 
@@ -1089,6 +1096,9 @@ async def api_auth_signup(request: Request):
         return {"user": {"id": user["id"], "name": user["name"], "username": user["username"]}}
     except psycopg2.errors.UniqueViolation:
         raise HTTPException(status_code=409, detail="Username already taken")
+    except Exception as e:
+        print(f"[signup] DB error: {e}")
+        raise HTTPException(status_code=503, detail="Database unavailable")
 
 
 @app.post("/api/auth/login")
@@ -1096,12 +1106,16 @@ async def api_auth_login(request: Request):
     data = await request.json()
     username = (data.get("username") or "").strip()
     password = (data.get("password") or "")
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM users WHERE username = %s", (username,))
-    user = cur.fetchone()
-    cur.close()
-    conn.close()
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM users WHERE username = %s", (username,))
+        user = cur.fetchone()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print(f"[login] DB error: {e}")
+        raise HTTPException(status_code=503, detail="Database unavailable")
     if not user or not check_password_hash(user["password_hash"], password):
         raise HTTPException(status_code=401, detail="Invalid username or password")
     request.session["user_id"] = user["id"]
