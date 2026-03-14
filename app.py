@@ -121,7 +121,11 @@ DATABASE_URL = os.environ.get(
 )
 
 def get_db():
-    conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor,
+    url = DATABASE_URL
+    # Supabase requires SSL — append sslmode if not already present
+    if "sslmode" not in url:
+        url += "?sslmode=require"
+    conn = psycopg2.connect(url, cursor_factory=psycopg2.extras.RealDictCursor,
                             connect_timeout=10)
     return conn
 
