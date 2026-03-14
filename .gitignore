@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+f1_cache/
+api_cache/
+*.pkl

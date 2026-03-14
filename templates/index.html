@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Circus</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;900&family=Inter:wght@900&display=swap">
+  <link rel="stylesheet" href="/static/css/style.css?v=21">
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
+</head>
+<body>
+
+<!-- ── Animated Background Paths ───────────────────────────────────────────── -->
+<div id="bg-paths" aria-hidden="true">
+  <svg id="bg-paths-svg" xmlns="http://www.w3.org/2000/svg"
+       viewBox="-400 -200 1100 1100" preserveAspectRatio="xMidYMid slice"></svg>
+</div>
+
+<!-- ── Header ──────────────────────────────────────────────────────────────── -->
+<header>
+  <a href="#championship" style="flex:1;display:flex;flex-direction:column;gap:4px;text-decoration:none;" aria-label="Circus">
+    <svg width="80" height="20" viewBox="0 0 80 20" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;display:block">
+      <defs>
+        <linearGradient id="hgrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#4a90d9"/>
+          <stop offset="100%" stop-color="#27f4d2"/>
+        </linearGradient>
+      </defs>
+      <text font-family="Inter,system-ui,sans-serif" font-size="18" font-weight="900" font-style="italic" letter-spacing="-0.5" fill="url(#hgrad)" x="0" y="17">Circus</text>
+    </svg>
+    <span style="font-size:9px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:#7490b0;line-height:1;">F1 · 2026</span>
+  </a>
+  <div class="header-meta" id="header-meta">Loading…</div>
+  <div class="header-auth" id="header-auth">
+    <button class="auth-btn" onclick="openAuthModal('login')">Sign In</button>
+  </div>
+</header>
+
+<!-- ── Nav ─────────────────────────────────────────────────────────────────── -->
+<nav>
+  <a href="#championship" class="nav-link active" onclick="showMainPage()">Championship</a>
+  <a href="#races"        class="nav-link" onclick="showMainPage()">Race Weekends</a>
+  <a href="#"             class="nav-link" id="nav-leagues" style="display:none" onclick="showLeaguesPage(event)">My Leagues</a>
+</nav>
+
+<!-- ── Main Dashboard Page ────────────────────────────────────────────────── -->
+<div id="page-main">
+<main>
+
+  <!-- ── Championship ────────────────────────────────────────────────────────── -->
+  <section id="championship">
+    <div class="section-title">2026 Championship</div>
+
+    <div id="champ-loading" class="loading">
+      <div class="spinner"></div><p>Loading championship data…</p>
+    </div>
+
+    <!-- Split: charts left, leader panel right -->
+    <div id="champ-split" class="champ-split hidden">
+
+      <!-- Left: bar charts stacked -->
+      <div class="charts-col">
+        <div class="chart-wrap chart-wrap-frosted">
+          <div class="chart-header">
+            <div class="chart-title">Drivers' Championship</div>
+            <div class="chart-mini-tabs">
+              <button class="chart-mini-tab active" onclick="switchDriverTab('standings')">Standings</button>
+              <button class="chart-mini-tab" onclick="switchDriverTab('teammate')">Teammate Battle</button>
+            </div>
+          </div>
+          <div class="chart-scroll" id="driver-tab-standings">
+            <div id="driver-champ-chart"></div>
+          </div>
+          <div class="chart-scroll hidden" id="driver-tab-teammate">
+            <div id="driver-teammate-chart"></div>
+          </div>
+        </div>
+        <div class="chart-wrap chart-wrap-frosted">
+          <div class="chart-title">Constructors' Championship</div>
+          <div class="chart-scroll">
+            <div id="constructor-champ-chart"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: leader + leagues -->
+      <div class="right-col">
+        <div id="leader-panel" class="leader-panel"></div>
+        <div id="leagues-panel" class="leagues-panel"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Race Weekends ──────────────────────────────────────────────────────── -->
+  <section id="races">
+    <div class="section-title">Race Weekends</div>
+
+    <div id="race-strip" class="rw-strip">
+      <!-- populated by JS -->
+    </div>
+
+    <!-- Race Detail Panel -->
+    <div id="race-detail" class="race-detail hidden">
+      <div class="race-detail-header">
+        <h3 id="race-detail-title"></h3>
+        <button class="close-btn" onclick="closeRaceDetail()">✕</button>
+      </div>
+      <div class="tab-bar race-tabs">
+        <!-- populated dynamically by openRace() -->
+      </div>
+      <div id="race-tab-qualifying"></div>
+      <div id="race-tab-race"              class="hidden"></div>
+      <div id="race-tab-laptimes"          class="hidden"></div>
+      <div id="race-tab-strategy"          class="hidden"></div>
+      <div id="race-tab-sprint"            class="hidden"></div>
+      <div id="race-tab-sprint_qualifying" class="hidden"></div>
+      <div id="race-tab-practice"          class="hidden"></div>
+    </div>
+  </section>
+
+</main>
+</div>
+
+<!-- ── Leagues Page (full page replacement) ───────────────────────────────── -->
+<div id="page-leagues" class="hidden">
+  <div class="leagues-page-wrap">
+
+    <!-- League list view -->
+    <div id="leagues-list-view">
+      <div class="leagues-page-header">
+        <button class="league-back-btn" onclick="showMainPage()">← Dashboard</button>
+        <h2>My Leagues</h2>
+        <button class="auth-btn" onclick="openLeaguesModal('join')" style="font-size:13px;padding:8px 16px">+ Join / Create</button>
+      </div>
+      <div id="leagues-full-content"></div>
+    </div>
+
+    <!-- League detail view (shown within leagues page) -->
+    <div id="league-view" class="hidden">
+      <div class="league-view-header">
+        <button class="league-back-btn" onclick="closeLeagueView()">← Back</button>
+        <h2 id="league-view-title"></h2>
+        <div class="league-view-actions" id="league-view-actions">
+          <span id="league-view-code" class="league-view-code-badge"></span>
+          <div class="live-indicator" id="league-live-indicator" title="Live — refreshing every 60s">
+            <span class="live-dot"></span>Live
+          </div>
+          <button class="auth-btn" onclick="openBetModal()">+ Place Bet</button>
+        </div>
+      </div>
+      <!-- Final reward banner -->
+      <div id="league-reward-banner" class="league-reward-banner hidden"></div>
+      <!-- Wins rankings chart -->
+      <div class="league-chart-wrap chart-wrap-frosted" id="league-chart-wrap">
+        <div class="chart-title">Wins Leaderboard</div>
+        <div id="league-drachma-chart"></div>
+      </div>
+      <div class="league-view-body">
+        <div class="league-members-panel" id="league-members-panel"></div>
+        <div class="league-bets-panel" id="league-bets-panel"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Bet Modal ───────────────────────────────────────────────────────────── -->
+<div id="bet-overlay" class="modal-overlay hidden" onclick="closeBetModal(event)">
+  <div class="modal-box bet-modal">
+    <button class="modal-close" onclick="closeBetModal(null,true)">✕</button>
+    <div id="bet-modal-body"></div>
+  </div>
+</div>
+
+<!-- ── All Actions Modal ──────────────────────────────────────────────────── -->
+<div id="all-bets-overlay" class="modal-overlay hidden" onclick="closeAllBetsModal(event)">
+  <div class="modal-box" style="max-width:560px;max-height:80vh;overflow-y:auto">
+    <button class="modal-close" onclick="closeAllBetsModal(null,true)">✕</button>
+    <div class="modal-title" style="margin-bottom:16px">All Actions</div>
+    <div id="all-bets-list"></div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+
+    <!-- Top row: brand + social -->
+    <div class="footer-top">
+      <a href="#championship" class="footer-brand" aria-label="Circus">
+        <span class="footer-circus-name">Circus</span>
+        <span class="footer-circus-sub">F1 · 2026</span>
+      </a>
+      <ul class="footer-social">
+        <li>
+          <a href="https://www.linkedin.com/in/jasonshin2" target="_blank" rel="noopener" aria-label="LinkedIn" class="footer-social-btn">
+            <!-- LinkedIn icon -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+            </svg>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Divider -->
+    <div class="footer-divider"></div>
+
+    <!-- Bottom row -->
+    <div class="footer-bottom">
+      <div class="footer-copyright">
+        <div>© 2026 F1 Season Dashboard</div>
+        <div>Data by <a href="https://github.com/theOehrly/Fast-F1" target="_blank" rel="noopener" class="footer-link">FastF1</a> — Unofficial, not affiliated with Formula 1</div>
+      </div>
+      <div class="footer-contact">
+        <a href="https://www.linkedin.com/in/jasonshin2" target="_blank" rel="noopener" class="footer-link footer-link-contact">Contact</a>
+      </div>
+    </div>
+
+  </div>
+</footer>
+
+<!-- ── Auth Modal ───────────────────────────────────────────────────────────── -->
+<div id="auth-overlay" class="modal-overlay hidden" onclick="closeAuthModal(event)">
+  <div class="modal-box auth-modal">
+    <button class="modal-close" onclick="closeAuthModal(null, true)">✕</button>
+    <div class="modal-tabs">
+      <button class="modal-tab active" id="tab-login" onclick="switchAuthTab('login')">Sign In</button>
+      <button class="modal-tab" id="tab-signup" onclick="switchAuthTab('signup')">Create Account</button>
+    </div>
+    <form id="auth-form" onsubmit="submitAuth(event)">
+      <div class="modal-field hidden" id="auth-name-field">
+        <label>Name</label>
+        <input id="auth-name" type="text" autocomplete="name" placeholder="your full name" maxlength="50">
+      </div>
+      <div class="modal-field">
+        <label>Username</label>
+        <input id="auth-username" type="text" autocomplete="username" placeholder="your username" maxlength="20" required>
+      </div>
+      <div class="modal-field">
+        <label>Password</label>
+        <input id="auth-password" type="password" autocomplete="current-password" placeholder="••••••••" required>
+      </div>
+      <div id="auth-error" class="modal-error hidden"></div>
+      <button type="submit" class="modal-submit" id="auth-submit-btn">Sign In</button>
+    </form>
+  </div>
+</div>
+
+<!-- ── Leagues Action Modal ──────────────────────────────────────────────────── -->
+<div id="leagues-overlay" class="modal-overlay hidden" onclick="closeLeaguesModal(event)">
+  <div class="modal-box leagues-modal">
+    <button class="modal-close" onclick="closeLeaguesModal(null, true)">✕</button>
+    <div id="leagues-modal-body"></div>
+  </div>
+</div>
+
+<!-- ── Toast Notifications ──────────────────────────────────────────────────── -->
+<div id="toast-container"></div>
+
+<script src="/static/js/app.js?v=21"></script>
+</body>
+</html>
